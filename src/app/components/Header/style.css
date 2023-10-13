@@ -1,0 +1,5 @@
+@media (width < 320px) {
+  .paths {
+    display: none;
+  }
+}
