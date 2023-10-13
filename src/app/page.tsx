@@ -1,113 +1,168 @@
-import Image from 'next/image'
+'use client';
 
-export default function Home() {
+import React, { useEffect, useState } from 'react';
+import { ToastContainer } from 'react-toastify';
+import { IResponse } from 'interface/IResponse';
+import { indexedTypes } from 'enum/indexedTypes';
+import { NextUIProvider } from '@nextui-org/react';
+import getIdOfUrl from '@/utils/getIdOfUrl';
+import { getPeopleById } from 'services/people.service';
+import { getFilmById } from 'services/film.service';
+import { getStarshipById } from 'services/starship.service';
+import { getPlanetById } from 'services/planet.service';
+import Loading from './components/Loading';
+import 'react-toastify/dist/ReactToastify.css';
+import Cards from './components/Cards';
+import Header from './components/Header';
+import { getLocalStorage } from './customeHooks/localStorageHook';
+
+function Home() {
+  const defaultValue = {
+    count: 0,
+    results: [],
+    length: 0,
+  };
+
+  const [loading, setLoading] = useState(true);
+  const [loadingPeople, setLoadingPeople] = useState(true);
+  const [loadingFilms, setLoadingFilms] = useState(true);
+  const [loadingStarships, setLoadingStarships] = useState(true);
+  const [loadingPlanets, setLoadingPlanets] = useState(true);
+  const [people, setPeople] = useState<IResponse>(defaultValue);
+  const [films, setFilms] = useState<IResponse>(defaultValue);
+  const [starships, setStarships] = useState<IResponse>(defaultValue);
+  const [planets, setPlanets] = useState<IResponse>(defaultValue);
+
+  useEffect(() => {
+    getInitialValues();
+  }, []);
+
+  const fetchAll = async (urls: string[], type: string) => {
+    const data = await Promise.all(urls.map((url) => {
+      const id = getIdOfUrl(url);
+      if (type === indexedTypes.INDEX_PEOPLE) return getPeopleById(id);
+      if (type === indexedTypes.INDEX_FILMS) return getFilmById(id);
+      if (type === indexedTypes.INDEX_STARSHIPS) return getStarshipById(id);
+      if (type === indexedTypes.INDEX_PLANETS) return getPlanetById(id);
+      return [];
+    }));
+    return data;
+  };
+
+  const getInitialValues = async () => {
+    try {
+      const peopleStorage = getLocalStorage(indexedTypes.INDEX_PEOPLE);
+      const filmsStorage = getLocalStorage(indexedTypes.INDEX_FILMS);
+      const starshipsStorage = getLocalStorage(indexedTypes.INDEX_STARSHIPS);
+      const planetsStorage = getLocalStorage(indexedTypes.INDEX_PLANETS);
+      const [peopleData, filmsData, starshipsData, planetsData] = await Promise.all([
+        fetchAll(peopleStorage, indexedTypes.INDEX_PEOPLE),
+        fetchAll(filmsStorage, indexedTypes.INDEX_FILMS),
+        fetchAll(starshipsStorage, indexedTypes.INDEX_STARSHIPS),
+        fetchAll(planetsStorage, indexedTypes.INDEX_PLANETS),
+      ]);
+      setPeople({
+        ...people, results: peopleData,
+      });
+      setFilms({
+        ...films, results: filmsData,
+      });
+      setStarships({
+        ...starships, results: starshipsData,
+      });
+      setPlanets({
+        ...planets, results: planetsData,
+      });
+      setLoading(false);
+      setLoadingPeople(false);
+      setLoadingFilms(false);
+      setLoadingStarships(false);
+      setLoadingPlanets(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+    <>
+      <ToastContainer />
+      {
+        loading
+          ? <Loading spinner={ false } label="" />
+          : (
+            <NextUIProvider>
+              <Header />
+              <p
+                className="w-full text-center p-10 text-5xl"
+              >
+                Your Favourites!
+              </p>
+              <p
+                className="w-full text-center p-10"
+              >
+                Welcome to this test App!, here you have favourites from the four principal flows. If you want to modify, you need to use their dedicated sections!
+              </p>
+              <div className=" bg-slate-900 rounded-lg m-5 p-5">
+                <Cards
+                  data={ people }
+                  indexedType={ indexedTypes.INDEX_PEOPLE }
+                  loading={ loadingPeople }
+                  setLoading={ setLoadingPeople }
+                  updateData={ (state) => {
+                    setPeople(state);
+                    setLoadingPeople(false);
+                  } }
+                  isFavourites
+                  isDetailed={ false }
+                />
+              </div>
+              <div className=" bg-slate-900 rounded-lg m-5 p-5">
+                <Cards
+                  data={ films }
+                  indexedType={ indexedTypes.INDEX_FILMS }
+                  loading={ loadingFilms }
+                  setLoading={ setLoadingFilms }
+                  updateData={ (state) => {
+                    setFilms(state);
+                    setLoadingFilms(false);
+                  } }
+                  isFavourites
+                  isDetailed={ false }
+                />
+              </div>
+              <div className=" bg-slate-900 rounded-lg m-5 p-5">
+                <Cards
+                  data={ starships }
+                  indexedType={ indexedTypes.INDEX_STARSHIPS }
+                  loading={ loadingStarships }
+                  setLoading={ setLoadingStarships }
+                  updateData={ (state) => {
+                    setStarships(state);
+                    setLoadingStarships(false);
+                  } }
+                  isFavourites
+                  isDetailed={ false }
+                />
+              </div>
+              <div className=" bg-slate-900 rounded-lg m-5 p-5 mb-0">
+                <Cards
+                  data={ planets }
+                  indexedType={ indexedTypes.INDEX_PLANETS }
+                  loading={ loadingPlanets }
+                  setLoading={ setLoadingPlanets }
+                  updateData={ (state) => {
+                    setPlanets(state);
+                    setLoadingPlanets(false);
+                  } }
+                  isFavourites
+                  isDetailed={ false }
+                />
+              </div>
+            </NextUIProvider>
+          )
+      }
+    </>
+  );
 }
+
+export default Home;

@@ -1,0 +1,8 @@
+.title, .title > p {
+  min-height: 3rem;
+}
+
+.bgcolor {
+  background-color: #414141;
+  margin-bottom: 2.5rem;
+}
